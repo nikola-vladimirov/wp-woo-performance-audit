@@ -45,13 +45,14 @@ The tests write a bad fixture and a clean fixture, check that every rule fires o
 
 ## Limits
 
-- The scan is a heuristic. It matches text on lines, so it misses multi-line calls and flags admin-only or CLI code. Read each hit.
+- The scan is a heuristic. Calls and checks that span up to a few lines are read together, but a check made far from its call (for example a guard in another function) is still missed. Read each hit.
+- Hits in admin, CLI, cron or test paths are marked lower risk. Those paths do not face shoppers, but check the context before dropping a hit.
 - It does not measure speed. Use Query Monitor, Lighthouse or PageSpeed for numbers.
 - Version-dependent rules (HPOS, session caps, deprecations) are checked against the WooCommerce version you name in the findings. Check the changelog for your store's version.
 
 ## Rule list
 
-Rule IDs are in `scripts/scan.sh`. Rules marked "(manual)" in the reference files are not scanned and need a reader.
+Every rule in the reference files is in `scripts/scan.sh` (35 rules, plus file-level checks for HPOS declaration, webhook signatures and template hooks). Rule IDs appear in each finding.
 
 ## License
 

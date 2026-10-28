@@ -1,6 +1,6 @@
 # Performance patterns (WordPress code)
 
-Read the section for the mode you are in. Rule IDs match `scripts/scan.sh`; rules marked (manual) are for reading the code and are not in the scan.
+Read the section for the mode you are in. Rule IDs match `scripts/scan.sh`. Hits in admin, CLI, cron or test paths are marked lower risk.
 
 ## Severity
 
@@ -18,10 +18,10 @@ Context lowers risk. Admin-only code, CLI commands and cron jobs do not face pub
 |---|---|---|---|
 | `query-unbounded` | CRITICAL | `posts_per_page => -1` or `numberposts => -1` on a public path | Cap it, paginate, or cache the ID list |
 | `query-posts` | CRITICAL | `query_posts()` breaks the main query | `WP_Query`, or `pre_get_posts` for the main query |
-| `query-n-plus-one` (manual) | CRITICAL | Query, `get_post_meta` or remote call inside a loop | Prime the cache (`update_post_meta_cache`), or fetch once before the loop |
+| `query-n-plus-one` | CRITICAL | Query, `get_post_meta` or remote call inside a loop | Prime the cache (`update_post_meta_cache`), or fetch once before the loop |
 | `query-like-lead` | WARNING | `LIKE '%term%'` scans the whole table | Trailing wildcard, or a search index |
-| `query-meta-value` (manual) | WARNING | `meta_query` on `value` for a binary flag | Store presence of a key instead |
-| `query-no-found-rows` (manual) | INFO | Count query when there is no pagination | `'no_found_rows' => true` |
+| `query-meta-value` | WARNING | `meta_query` on `value` for a binary flag | Store presence of a key instead |
+| `query-no-found-rows` | INFO | Count query when there is no pagination | `'no_found_rows' => true` |
 | `query-post-not-in` | WARNING | Large `post__not_in` | Positive `post__in`, or a precomputed list |
 
 ## Hooks, options and cache
@@ -42,7 +42,7 @@ Context lowers risk. Admin-only code, CLI commands and cron jobs do not face pub
 | Rule | Severity | Problem | Fix |
 |---|---|---|---|
 | `cron-unguarded` | WARNING | `wp_schedule_event()` with no `wp_next_scheduled()` guard creates duplicates | Guard it |
-| `cron-long-job` (manual) | CRITICAL | One cron run loops over all users or posts | Batch with `wp_schedule_single_event()` and an offset |
+| `cron-long-job` | WARNING | One cron run loops over all users or posts | Batch with `wp_schedule_single_event()` and an offset |
 
 On busy sites, run cron from the server: `define( 'DISABLE_WP_CRON', true );` and `wp cron event run --due-now` every minute.
 
@@ -53,8 +53,8 @@ On busy sites, run cron from the server: `define( 'DISABLE_WP_CRON', true );` an
 | `ajax-polling` | CRITICAL | `setInterval` with `fetch` or `ajax` | Event-driven updates, or long intervals with backoff |
 | `ajax-post-read` | WARNING | `$.post()` for a read bypasses cache | GET, with a cacheable response |
 | `lodash-full` | WARNING | `import _ from 'lodash'` bloats the bundle | Import the one function you need |
-| `enqueue-global` (manual) | WARNING | Scripts and styles load on every page | Enqueue where used, or dequeue per template |
-| `asset-no-version` (manual) | INFO | `wp_enqueue_*` without a version | Pass the version, or `filemtime()` |
+| `enqueue-global` | WARNING | Scripts and styles load on every page | Enqueue where used, or dequeue per template |
+| `asset-no-version` | INFO | `wp_enqueue_*` without a version | Pass the version, or `filemtime()` |
 
 ## Editor and blocks
 

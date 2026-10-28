@@ -32,7 +32,7 @@ Core principle: classify before judging, scan before reading, and read each find
 bash "${WP_PERF_AUDIT_HOME:-$HOME/.claude/skills/wp-woo-performance-audit}/scripts/scan.sh" <edited files or folder>
 ```
 
-Output: `file:line: SEVERITY rule-id: message`, then a count. Rule IDs are listed in `scripts/scan.sh`. `lean-project audit perf <files>` runs the same script when lean-project is installed.
+Output: `file:line: SEVERITY rule-id: message`, then a count. Rule IDs are listed in `scripts/scan.sh`. Hits in admin, CLI, cron or test paths are marked lower risk: check the context, but they do not face shoppers. `lean-project audit perf <files>` runs the same script when lean-project is installed.
 
 Then read each hit in context. Many are false positives: an admin-only query, a CLI command, a cron job, a value that is already escaped. Drop the ones that do not hold, and say which you dropped and why.
 

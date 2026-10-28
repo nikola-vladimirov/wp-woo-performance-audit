@@ -115,8 +115,8 @@ This is not a PCI audit.
 | Rule | Severity | Check |
 |---|---|---|
 | `card-data` | CRITICAL | Raw card number or CVV stored in meta, options, tables, sessions or logs |
-| `payment-ssl` (manual) | WARNING | `process_payment()` without an HTTPS check outside test mode |
-| `hardcoded-key` (manual) | WARNING | API keys in code (use settings) |
+| `payment-ssl` | WARNING | `process_payment()` without an HTTPS check outside test mode |
+| `hardcoded-key` | WARNING | API keys in code (use settings) |
 | `webhook-unverified` | CRITICAL | Webhook handler with no signature check (`hash_equals()` with HMAC) |
 
 - Return `array( 'result' => 'success', 'redirect' => ... )` from `process_payment()`.

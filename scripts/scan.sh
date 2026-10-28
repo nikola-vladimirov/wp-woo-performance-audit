@@ -3,6 +3,7 @@
 # Usage: scan.sh <folder>           every PHP and JS file under it (vendor, node_modules, build and .git skipped)
 #        scan.sh <file> [file ...]  only those files (the review scope rule)
 # Output: file:line: SEVERITY rule-id: message, then a count. Each hit is a line to read, not a verdict.
+# Hits in admin, CLI, cron or test paths are marked as lower risk, since they do not face public traffic.
 set -u
 export LC_ALL=C
 
@@ -31,6 +32,29 @@ $FILES
 EOF
 }
 
+# rule_win <SEVERITY> <rule-id> <regex> <message> <clear regex> <lines before> <lines after>
+# A hit on a line matching <regex>, unless <clear regex> matches within the window around it. Handles calls
+# and checks that span several lines. Patterns go through ENVIRON, so backslashes reach awk unchanged.
+rule_win() {
+  local sev=$1 id=$2 pat=$3 msg=$4 clear=$5 before=$6 after=$7 f
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    PAT="$pat" CLR="$clear" BEF="$before" AFT="$after" SEV="$sev" ID="$id" MSG="$msg" FILE="$f" awk '
+      { line[NR] = $0 }
+      END {
+        for (i = 1; i <= NR; i++) {
+          if (line[i] !~ ENVIRON["PAT"]) continue
+          ok = 0
+          for (j = i - ENVIRON["BEF"]; j <= i + ENVIRON["AFT"]; j++)
+            if (j >= 1 && j <= NR && line[j] ~ ENVIRON["CLR"]) { ok = 1; break }
+          if (!ok) printf "%s:%d: %s %s: %s\n", ENVIRON["FILE"], i, ENVIRON["SEV"], ENVIRON["ID"], ENVIRON["MSG"]
+        }
+      }' "$f"
+  done <<EOF
+$FILES
+EOF
+}
+
 # files_matching <extended regex>: the scanned files with at least one matching line
 files_matching() {
   local f
@@ -53,20 +77,27 @@ scan_all() {
   rule CRITICAL card-data '(card_number|card_cvv|cvv).{0,80}(error_log|_meta|update_option|insert)|error_log.{0,80}(card|cvv)' "card data stored or logged: never keep card numbers or CVV"
 
   # WARNING: slows pages or the cart under load, or is fragile
-  rule WARNING remote-no-timeout 'wp_remote_(get|post|request)[[:space:]]*\(' "remote call: check it sets 'timeout' (args may sit on the next lines) and checks is_wp_error()" 'timeout'
+  rule_win WARNING remote-no-timeout 'wp_remote_(get|post|request)[[:space:]]*\(' "remote call with no 'timeout' in its arguments: default 5 s, and check is_wp_error()" 'timeout' 0 3
   rule WARNING remote-file-get 'file_get_contents[[:space:]]*\([[:space:]]*["'\'']https?://' "file_get_contents() on a URL: use wp_remote_get() with a timeout"
   rule WARNING query-like-lead "LIKE[[:space:]]+'%" "LIKE with a leading wildcard scans the whole table"
   rule WARNING query-post-not-in 'post__not_in' "post__not_in with a long list: prefer post__in or precomputed IDs"
+  rule WARNING query-meta-value "['\"]compare['\"][[:space:]]*=>" "meta comparison on a value scans unindexed meta: store a key that marks presence, or use a taxonomy" 'EXISTS'
   rule WARNING product-wp-query 'post_type.{0,10}product\b' "products through WP_Query: use wc_get_products() or WC_Product_Query"
-  rule WARNING in-array-loose 'in_array[[:space:]]*\(' "in_array() without strict true" 'true'
-  rule WARNING cron-unguarded 'wp_schedule_event[[:space:]]*\(' "wp_schedule_event(): check wp_next_scheduled() guards it, or it duplicates" 'wp_next_scheduled'
+  rule_win WARNING in-array-loose 'in_array[[:space:]]*\(' "in_array() without strict true" 'true' 0 2
+  rule_win WARNING cron-unguarded 'wp_schedule_event[[:space:]]*\(' "wp_schedule_event(): check wp_next_scheduled() guards it, or it duplicates" 'wp_next_scheduled' 4 0
+  rule WARNING cron-long-job 'get_(users|posts)[[:space:]]*\(' "get_users() or get_posts() with no limit: a cron job that loops over everything blocks the queue; batch it" 'number|posts_per_page|nopaging'
   rule WARNING transient-dynamic 'set_transient[[:space:]]*\([[:space:]]*(\$|[^,]*\{\$)' "dynamic transient key: per-user rows fill wp_options without a persistent object cache"
   rule WARNING ajax-post-read '\$\.post\(' "POST for a read bypasses the cache: use GET if it only reads"
   rule WARNING lodash-full "import _ from ['\"]lodash['\"]" "full lodash import: import the one function you need"
   rule WARNING cookie-public 'setcookie[[:space:]]*\(' "setcookie(): on public pages this can make responses uncacheable per visitor"
   rule WARNING wc-fragments 'wc-cart-fragments' "cart fragments: confirm they load only on cart, checkout and product pages"
+  rule_win WARNING enqueue-global 'wp_enqueue_(script|style)[[:space:]]*\(' "asset enqueued on every page: wrap it in a page or template check" 'if[[:space:]]*\(|is_[a-z_]+\(|has_[a-z_]+\(|current_theme_supports' 4 0
+  rule_win WARNING payment-ssl 'function[[:space:]]+process_payment' "process_payment() with no is_ssl() check nearby: payments must not run over plain HTTP" 'is_ssl' 0 25
+  rule WARNING hardcoded-key "(api_key|apikey|secret|token|password)[^=]{0,20}=[[:space:]]*['\"][A-Za-z0-9_-]{20,}['\"]" "key or secret written in code: read it from settings or constants" 'getenv|get_option|defined\(|constant\('
 
   # INFO: optimization and cleanup
+  rule_win INFO query-no-found-rows 'new WP_Query' "WP_Query counts all rows: add 'no_found_rows' => true when it does not paginate" 'no_found_rows|paged|nopaging|pagination|max_num_pages|found_posts' 0 8
+  rule_win INFO asset-no-version 'wp_enqueue_(script|style)[[:space:]]*\(' "asset enqueued with no version: cache busting breaks on updates" 'VERSION|filemtime|version|["'\''][0-9][0-9.]*["'\'']' 0 4
   rule INFO uncached-lookup 'url_to_postid|attachment_url_to_postid|count_user_posts' "uncached lookup: wrap it in an object cache"
   rule INFO option-write '(update|add)_option[[:space:]]*\(' "option write: confirm it does not run on every page load"
   rule INFO wc-session 'wc_session_expiration' "session expiration filter: the value must stay at 30 days or less (WC 10.1+)"
@@ -87,7 +118,8 @@ scan_all() {
   done
 }
 
-out=$(scan_all)
+# Mark hits in admin, CLI, cron and test paths: they run off the public request path.
+out=$(scan_all | sed -E '/\/(admin|cli|cron|tests?|bin)\//s/$/  [admin, CLI, cron or test path: lower risk, check the context]/')
 [ -n "$out" ] && printf '%s\n' "$out"
 count() { printf '%s\n' "$out" | grep -c " $1 "; }
 echo "SCAN: $(count CRITICAL) critical, $(count WARNING) warning, $(count INFO) info in $(printf '%s\n' "$FILES" | grep -c .) file(s). Heuristic: read each hit in context before you report it."
