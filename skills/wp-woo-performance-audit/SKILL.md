@@ -29,7 +29,7 @@ Core principle: classify before judging, scan before reading, and read each find
 ## Run the scan
 
 ```bash
-bash "${WP_PERF_AUDIT_HOME:-$HOME/.claude/skills/wp-woo-performance-audit}/scripts/scan.sh" <edited files or folder>
+bash scripts/scan.sh <edited files or folder>   # run from this skill folder (skills/wp-woo-performance-audit in the plugin)
 ```
 
 Output: `file:line: SEVERITY rule-id: message`, then a count. Rule IDs are listed in `scripts/scan.sh`. Hits in admin, CLI, cron or test paths are marked lower risk: check the context, but they do not face shoppers. `lean-project audit perf <files>` runs the same script when lean-project is installed.

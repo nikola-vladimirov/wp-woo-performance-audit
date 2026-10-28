@@ -13,11 +13,14 @@ It merges three skills into one: `wp-performance-review`, `wp-woocommerce-dev` a
 
 ## Install
 
-```bash
-git clone https://github.com/nikola-vladimirov/wp-woo-performance-audit.git ~/.claude/skills/wp-woo-performance-audit
+In Claude Code:
+
+```
+/plugin marketplace add nikola-vladimirov/wp-woo-performance-audit
+/plugin install wp-woo-performance-audit@wp-woo-performance-audit
 ```
 
-Claude Code loads it from `~/.claude/skills`. To keep it elsewhere, set `WP_PERF_AUDIT_HOME` to the folder.
+The skill can also be copied by hand into `~/.claude/skills/wp-woo-performance-audit` (the folder with `SKILL.md`, `references/` and `scripts/`).
 
 ## Use
 
@@ -26,14 +29,14 @@ Ask Claude for an audit, for example "audit this store for performance", or "rev
 Run the scan yourself:
 
 ```bash
-bash ~/.claude/skills/wp-woo-performance-audit/scripts/scan.sh path/to/file.php path/to/other.js
+bash skills/wp-woo-performance-audit/scripts/scan.sh path/to/file.php path/to/other.js   # from the plugin folder
 ```
 
 Output is `file:line: SEVERITY rule-id: message`, then a count. Each hit is a line to read, not a verdict.
 
 ## Works with lean-project
 
-[lean-project](https://github.com/nikola-vladimirov/lean-project) routes WordPress and WooCommerce work here. Its `lean-project audit perf <files>` command runs `scripts/scan.sh` for the card's edited files, and a CRITICAL hit keeps the card from `done` until it is fixed or explained. lean-project's WordPress guide points to this skill for deeper audits.
+[lean-project](https://github.com/nikola-vladimirov/lean-project) routes WordPress and WooCommerce work here. Its `lean-project audit perf <files>` command runs `scripts/scan.sh` from the installed plugin for the card's edited files, and a CRITICAL hit keeps the card from `done` until it is fixed or explained. lean-project's WordPress guide points to this skill for deeper audits.
 
 ## Tests
 

@@ -1,0 +1,14 @@
+{
+  "name": "wp-woo-performance-audit",
+  "displayName": "WordPress and WooCommerce performance audit",
+  "version": "0.1.0",
+  "description": "Audit WordPress and WooCommerce sites and code for performance, HPOS compatibility and cart or checkout risk, with a read-only scan and a site onboarding path. Called by lean-project.",
+  "author": {
+    "name": "nikola-vladimirov",
+    "url": "https://github.com/nikola-vladimirov"
+  },
+  "homepage": "https://github.com/nikola-vladimirov/wp-woo-performance-audit",
+  "repository": "https://github.com/nikola-vladimirov/wp-woo-performance-audit",
+  "license": "MIT",
+  "keywords": ["wordpress", "woocommerce", "performance", "hpos", "audit"]
+}

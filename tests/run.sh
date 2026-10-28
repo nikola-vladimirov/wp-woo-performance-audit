@@ -4,7 +4,7 @@
 # Run: bash tests/run.sh
 set -u
 here=$(cd "$(dirname "$0")" && pwd)
-scan="$here/../scripts/scan.sh"
+scan="$here/../skills/wp-woo-performance-audit/scripts/scan.sh"
 tmp=$(mktemp -d) || exit 1
 trap 'rm -rf "$tmp"' EXIT
 fail=0

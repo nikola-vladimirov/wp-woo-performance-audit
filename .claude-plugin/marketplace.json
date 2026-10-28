@@ -1,0 +1,15 @@
+{
+  "name": "wp-woo-performance-audit",
+  "description": "WordPress and WooCommerce performance audit skill.",
+  "owner": {
+    "name": "nikola-vladimirov",
+    "url": "https://github.com/nikola-vladimirov"
+  },
+  "plugins": [
+    {
+      "name": "wp-woo-performance-audit",
+      "source": "./",
+      "description": "Audit WordPress and WooCommerce performance, HPOS compatibility and site onboarding, with a read-only scan."
+    }
+  ]
+}
