@@ -34,9 +34,9 @@ bash skills/wp-woo-performance-audit/scripts/scan.sh path/to/file.php path/to/ot
 
 Output is `file:line: SEVERITY rule-id: message`, then a count. Each hit is a line to read, not a verdict.
 
-## Works with lean-project
+## Works with lean-gate
 
-[lean-project](https://github.com/nikola-vladimirov/lean-project) routes WordPress and WooCommerce work here. Its `lean-project audit perf <files>` command runs `scripts/scan.sh` from the installed plugin for the card's edited files, and a CRITICAL hit keeps the card from `done` until it is fixed or explained. lean-project's WordPress guide points to this skill for deeper audits.
+[lean-gate](https://github.com/nikola-vladimirov/lean-gate) routes WordPress and WooCommerce work here. Its `lean-gate audit perf <files>` command runs `scripts/scan.sh` from the installed plugin for the card's edited files, and a CRITICAL hit keeps the card from `done` until it is fixed or explained. lean-gate's WordPress guide points to this skill for deeper audits.
 
 ## Tests
 
